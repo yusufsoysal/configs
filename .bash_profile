@@ -1,5 +1,164 @@
 export MAVEN_OPTS="-Xms1024m -Xmx2048m -XX:PermSize=512m -XX:MaxPermSize=512m"
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+title() { echo -ne "\033]0;"$*"\007" }
+
+tab-color() {
+    echo -ne "\033]6;1;bg;red;brightness;$1\a"
+    echo -ne "\033]6;1;bg;green;brightness;$2\a"
+    echo -ne "\033]6;1;bg;blue;brightness;$3\a"
+}
+
+tab-reset() {
+    echo -ne "\033]6;1;bg;*;default\a"
+    title
+}
+
+nexus-private() {
+    if [ -f ~/.m2/settings-withPrivate.xml ]; then
+        mv ~/.m2/settings.xml ~/.m2/settings-withPublic.xml
+        mv ~/.m2/settings-withPrivate.xml ~/.m2/settings.xml
+        echo -e "${GREEN}Nexus Settings XML file is changed to private${NC}"
+    else
+        echo -e "${RED}Nexus Settings XML file is already with private IP${NC}"
+    fi
+}
+
+nexus-public() {
+   if [ -f ~/.m2/settings-withPublic.xml ]; then
+       mv ~/.m2/settings.xml ~/.m2/settings-withPrivate.xml
+       mv ~/.m2/settings-withPublic.xml ~/.m2/settings.xml
+       echo -e "${GREEN}Nexus Settings XML file is changed to public${NC}"
+   else
+       echo -e "${RED}Nexus Settings XML file is already with public IP${NC}"
+   fi
+}
+
+npm-private() {
+    if [ -f ~/.npmrc-withPrivate ]; then
+        mv ~/.npmrc ~/.npmrc-withPublic
+        mv ~/.npmrc-withPrivate ~/.npmrc
+        echo -e "${GREEN}.npmrc file is changed to private${NC}"
+    else
+        echo -e "${RED}.npmrc is already with private IP${NC}"
+    fi
+}
+
+npm-public() {
+    if [ -f ~/.npmrc-withPublic ]; then
+        mv ~/.npmrc ~/.npmrc-withPrivate
+        mv ~/.npmrc-withPublic ~/.npmrc
+        echo -e "${GREEN}.npmrc file is changed to public${NC}"
+    else
+        echo -e "${RED}.npmrc file is already with public IP${NC}"
+    fi
+}
+
+work-private(){
+    nexus-private
+    npm-private
+}
+
+work-public(){
+    nexus-public
+    npm-public
+}
+
+run-orchestra() {
+    cd ~/Development/wopr-orchestra
+    title Orchestra
+    tab-color 224 164 200
+    mvn  -Dspring.profiles.active=local spring-boot:run
+    tab-reset
+}
+
+run-auth() {
+    cd ~/Development/wopr-auth
+    title Auth
+    tab-color 224 234 100
+    mvn -Drun.jvmArguments="-Dspring.profiles.active=dev" spring-boot:run
+    tab-reset
+}
+
+run-discovery() {
+    cd ~/Development/wopr-discovery-service 
+    title Discovery Service 
+    tab-color 170 57 57 
+    mvn spring-boot:run 
+    tab-reset
+}
+
+run-config() {
+    cd ~/Development/wopr-config-server 
+    title Config Server 
+    tab-color 224 164 42 
+    mvn spring-boot:run 
+    tab-reset
+}
+
+run-data-generator() {
+    cd ~/Development/wopr-service-data 
+    title Data Generator 
+    tab-color 5 109 255 
+    mvn -DWOPR_CONFIG_SERVER_URL=http://52.208.126.27:8888 -Dspring.profiles.active=dev spring-boot:run 
+    tab-reset
+}    
+
+run-dynamo() {
+    title DynamoDB
+    tab-color 209 102 48
+    /Users/dev/Development/dynamodb_local_latest/start.sh    
+    tab-reset
+}
+
+run-cassandra() {
+    title Cassandra
+    tab-color 293 97 79
+    ~/opt/cassandra/bin/cassandra -f 
+    tab-reset
+}
+
+run-cqlsh() {
+    title Cassandra CQLSH 
+    tab-color 24 100 100 
+    ~/opt/cassandra/bin/cqlsh 
+    tab-reset
+}
+
+maestro() {
+    cd ~/Development/generator-wopr-dashboard/test/maestroV3 
+    title --MAESTRO--
+    tab-color 255 201 36
+    gulp serve
+    tab-reset
+}
+
+maestro-generate() {
+    cd ~/Development/generator-wopr-dashboard 
+    rm -rf test/maestroV3 
+    title Gulp MeastroV3 
+    gulp maestroV3 
+    cd test/maestroV3 
+    title NPM Install 
+    npm install 
+    tab-reset 
+    maestro
+}
+
+update-generator() {
+    sudo npm uninstall -g generator-wopr
+    sudo npm install -g generator-wopr
+}
+
+function to-aws(){
+    title Connecting AWS Server $1
+    ssh -i ~/Development/pem/wopr-key-pair.pem ec2-user@$1
+    tab-reset
+}
+
 alias upprofile='vim ~/.bash_profile && source ~/.bash_profile'
 alias dmall='cd ~/Development/dmall'
 alias dev='cd ~/Development'
